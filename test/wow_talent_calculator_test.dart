@@ -2,11 +2,14 @@ import 'package:wow_talent_calculator/wow_talent_calculator.dart';
 import 'package:test/test.dart';
 
 void main() {
-  group('A group of tests', () {
-    setUp(() {
-      // Additional setup goes here.
-    });
+  var tc = WoWTalentCalculator(expansionId: -1, charClassId: 0);
 
-    test('First Test', () {});
+  group('A group of tests', () {
+    setUp(() {});
+
+    test('First Test', () {
+      tc.printCharClassState();
+      tc.printSpecState(2);
+    });
   });
 }
