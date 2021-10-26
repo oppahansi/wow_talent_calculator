@@ -1,4 +1,8 @@
-enum Expansions { vanilla, tbc, wotlk }
+enum Expansions {
+  vanilla,
+  tbc,
+  wotlk,
+}
 
 enum CharClasses {
   druid,
