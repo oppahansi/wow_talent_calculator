@@ -2,7 +2,7 @@ import 'package:wow_talent_calculator/wow_talent_calculator.dart';
 import 'package:test/test.dart';
 
 void main() {
-  var tc = WoWTalentCalculator(expansionId: -1, charClassId: 0);
+  var tc = WowTalentCalculator(expansionId: -1, charClassId: 0);
 
   group('A group of tests', () {
     setUp(() {});

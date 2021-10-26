@@ -1,40 +1,36 @@
-import 'exceptions/talent_calculator_exception.dart';
 import 'models/talent_tree_position.dart';
-import 'utils/constants.dart';
+import 'utils/talent_calculator_constants.dart';
 
-class WoWTalentCalculator {
-  final int expansionId;
-  final int charClassId;
+class WowTalentCalculator {
+  int _expansionId = 0;
+  int _charClassId = 0;
 
   int _spentPoints = 0;
   int _maxTalentPoints = 0;
 
   List<List<int>> _treeState = [];
+
   List<List<int>> _talentTreeLayouts = [];
   List<List<int>> _talentMaxPoints = [];
   List<List<int>> _talentDependencies = [];
   List<String> _specPrintTemplates = [];
 
-  WoWTalentCalculator({required this.expansionId, required this.charClassId}) {
-    if (expansionId < 0 || expansionId >= Constants.expansionAndSpecIds.length) {
-      throw TalentCalculatorException(
-          "Invalid Expansion ID!\nExpansion ID must be >= 0 & < ${Constants.expansionAndSpecIds.length}.");
-    }
-    if (charClassId < 0 || charClassId >= Constants.charClassesAmounts[expansionId]) {
-      throw TalentCalculatorException(
-          "Invalid Character Class ID!\nCharacter Class ID must be >= 0 & < ${Constants.charClassesAmounts[expansionId]}.");
-    }
+  WowTalentCalculator({int expansionId = 0, int charClassId = 0}) {
+    _expansionId = expansionId;
+    _charClassId = charClassId;
 
-    _maxTalentPoints = Constants.maxTalentPoints[expansionId];
+    _maxTalentPoints = TalentCalculatorConstants.maxTalentPoints[_expansionId];
 
-    _talentTreeLayouts = List.from(Constants.talentLayouts[expansionId][charClassId]);
-    _talentMaxPoints = List.from(Constants.talentMaxPoints[expansionId][charClassId]);
-    _talentDependencies = List.from(Constants.talentDependencies[expansionId][charClassId]);
-    _specPrintTemplates = List.from(Constants.specPrintTemplates[expansionId][charClassId]);
+    _talentTreeLayouts = List.from(TalentCalculatorConstants.talentLayouts[_expansionId][_charClassId]);
+    _talentMaxPoints = List.from(TalentCalculatorConstants.talentMaxPoints[_expansionId][_charClassId]);
+    _talentDependencies = List.from(TalentCalculatorConstants.talentDependencies[_expansionId][_charClassId]);
+    _specPrintTemplates = List.from(TalentCalculatorConstants.specPrintTemplates[_expansionId][_charClassId]);
 
-    _createTreeState(expansionId);
+    _createTreeState(_expansionId);
     _initTreeState();
   }
+
+  // * ----------------- PUBLIC METHODS -----------------
 
   void investTalentPoint(int specId, int talentTreeIndex) {
     if (!canInvestPoint(specId, talentTreeIndex)) {
@@ -54,24 +50,8 @@ class WoWTalentCalculator {
     _spentPoints--;
   }
 
-  void resetSpec(int specId) {
-    for (int i = 0; i < _treeState[specId].length; i++) {
-      if (_treeState[specId][i] < 0) {
-        continue;
-      }
-      _spentPoints -= _treeState[specId][i];
-      _treeState[specId][i] = 0;
-    }
-  }
-
-  void resetAll() {
-    for (int specId in Constants.expansionAndSpecIds) {
-      resetSpec(specId);
-    }
-  }
-
   bool canInvestPoint(int specId, int talentTreeIndex) {
-    if (!isInputValid(specId, talentTreeIndex)) {
+    if (!_isInputValid(specId, talentTreeIndex)) {
       return false;
     }
 
@@ -87,7 +67,7 @@ class WoWTalentCalculator {
   }
 
   bool canRemoveTalentPoint(int specId, int talentTreeIndex) {
-    if (!isInputValid(specId, talentTreeIndex)) {
+    if (!_isInputValid(specId, talentTreeIndex)) {
       return false;
     }
 
@@ -96,22 +76,6 @@ class WoWTalentCalculator {
     }
 
     if (!isSafeToRemoveTalentPoint(specId, talentTreeIndex)) {
-      return false;
-    }
-
-    return true;
-  }
-
-  bool isInputValid(int specId, int talentTreeIndex) {
-    if (!isSpecIdValid(specId)) {
-      return false;
-    }
-
-    if (!isTalentTreeIndexValid(talentTreeIndex)) {
-      return false;
-    }
-
-    if (!isTalentPosition(specId, talentTreeIndex)) {
       return false;
     }
 
@@ -137,13 +101,6 @@ class WoWTalentCalculator {
     return true;
   }
 
-  bool isSpecIdValid(int specId) => specId >= 0 && specId < Constants.expansionAndSpecIds.length;
-
-  bool isTalentTreeIndexValid(int talentTreeIndex) =>
-      talentTreeIndex >= 0 && talentTreeIndex < _talentTreeLayouts[0].length;
-
-  bool isTalentPosition(int specId, int talentTreeIndex) => _talentTreeLayouts[specId][talentTreeIndex] == 1;
-
   bool isTalentMaxedOut(int specId, int talentTreeIndex) {
     if (_treeState[specId][talentTreeIndex] == _talentMaxPoints[specId][talentTreeIndex]) {
       return true;
@@ -152,30 +109,33 @@ class WoWTalentCalculator {
     return false;
   }
 
+  bool isTalentTreeIndexEmpty(int specId, int talentTreeIndex) => _talentTreeLayouts[specId][talentTreeIndex] == 0;
+
   bool isSafeToRemoveTalentPoint(int specId, int talentTreeIndex) {
     // TODO
 
     return true;
   }
 
-  TalentTreePosition getTalentTreePositionForIndex(int specId, int talentTreeIndex) {
-    if (!isTalentTreeIndexValid(talentTreeIndex)) {
-      throw TalentCalculatorException(
-          "Invalid Talent Tree Position!\nPosition must be >= 0 & < ${_talentTreeLayouts[0].length}.");
-    }
+  TalentTreePosition getTalentTreePositionForIndex(int specId, int talentTreeIndex) => TalentTreePosition(
+        row: talentTreeIndex ~/ 4,
+        column: talentTreeIndex % 4,
+      );
 
-    return TalentTreePosition(
-      row: talentTreeIndex ~/ 4,
-      column: talentTreeIndex % 4,
-    );
+  void resetSpec(int specId) {
+    for (int i = 0; i < _treeState[specId].length; i++) {
+      if (_treeState[specId][i] < 0) {
+        continue;
+      }
+      _spentPoints -= _treeState[specId][i];
+      _treeState[specId][i] = 0;
+    }
   }
 
-  void printSpecState(int specId) {
-    if (specId < 0 || specId >= Constants.expansionAndSpecIds.length) {
-      throw TalentCalculatorException(
-          "Invalid Spec ID!\nSpec ID must be >= 0 & < ${Constants.expansionAndSpecIds.length}.");
+  void resetAll() {
+    for (int specId in TalentCalculatorConstants.expansionAndSpecIds) {
+      resetSpec(specId);
     }
-    print(_buildPrintableSpecState(specId));
   }
 
   void printCharClassState() {
@@ -192,10 +152,24 @@ class WoWTalentCalculator {
     }
   }
 
+  // * ----------------- GETTER & SETTER -----------------
+
   int get getSpentPoints => _spentPoints;
 
+  List<List<int>> get getTreeState => _treeState;
+
+  void setTreeState(List<List<int>> treeState) {
+    _treeState = treeState;
+  }
+
+  void printSpecState(int specId) {
+    print(_buildPrintableSpecState(specId));
+  }
+
+  // * ----------------- PRIVATE METHODS -----------------
+
   void _createTreeState(int expansionId) {
-    for (List<int> spec in Constants.initialTreeState[expansionId]) {
+    for (List<int> spec in TalentCalculatorConstants.initialTreeState[expansionId]) {
       List<int> specState = [];
       for (int talentTreeIndex in spec) {
         specState.add(talentTreeIndex);
@@ -226,4 +200,25 @@ class WoWTalentCalculator {
 
     return specState;
   }
+
+  bool _isInputValid(int specId, int talentTreeIndex) {
+    if (!_isSpecIdValid(specId)) {
+      return false;
+    }
+
+    if (!_isTalentTreeIndexValid(talentTreeIndex)) {
+      return false;
+    }
+
+    if (isTalentTreeIndexEmpty(specId, talentTreeIndex)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  bool _isSpecIdValid(int specId) => specId >= 0 && specId < TalentCalculatorConstants.expansionAndSpecIds.length;
+
+  bool _isTalentTreeIndexValid(int talentTreeIndex) =>
+      talentTreeIndex >= 0 && talentTreeIndex < _talentTreeLayouts[0].length;
 }

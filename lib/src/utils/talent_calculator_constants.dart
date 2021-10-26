@@ -17,7 +17,7 @@ enum CharClasses {
   dk,
 }
 
-class Constants {
+class TalentCalculatorConstants {
   static const int minimumLevel = 10;
 
   static const List<int> expansionAndSpecIds = [0, 1, 2];
