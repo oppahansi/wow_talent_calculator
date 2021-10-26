@@ -13,4 +13,8 @@ void main() {
   tc.resetSpec(0);
 
   tc.printSpecState(0);
+
+  var position = tc.getTalentTreePositionForIndex(0, 11);
+
+  print(position.toString());
 }
