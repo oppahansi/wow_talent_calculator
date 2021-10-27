@@ -4,6 +4,7 @@ import 'utils/talent_calculator_constants.dart';
 class WowTalentCalculator {
   int _expansionId = 0;
   int _charClassId = 0;
+  int _specId = 0;
 
   int _spentPoints = 0;
   int _maxTalentPoints = 0;
@@ -32,66 +33,69 @@ class WowTalentCalculator {
 
   // * ----------------- PUBLIC METHODS -----------------
 
-  void investTalentPoint(int specId, int talentTreeIndex) {
-    if (!canInvestPoint(specId, talentTreeIndex)) {
+  void investPointAt(int index) {
+    if (!canInvestPointAt(index)) {
       return;
     }
 
-    _treeState[specId][talentTreeIndex]++;
+    _treeState[_specId][index]++;
     _spentPoints++;
   }
 
-  void removeTalentPoint(int specId, int talentTreeIndex) {
-    if (!canRemoveTalentPoint(specId, talentTreeIndex)) {
+  void removePointAt(int index) {
+    if (!canRemovePointAt(index)) {
       return;
     }
 
-    _treeState[specId][talentTreeIndex]--;
+    _treeState[_specId][index]--;
     _spentPoints--;
   }
 
-  bool canInvestPoint(int specId, int talentTreeIndex) {
-    if (!_isInputValid(specId, talentTreeIndex)) {
+  bool canInvestPointAt(int index) {
+    if (areAllPointsSpent()) {
       return false;
     }
 
-    if (!isTalentAvailable(specId, talentTreeIndex)) {
+    if (!_isInputValidAt(index)) {
       return false;
     }
 
-    if (isTalentMaxedOut(specId, talentTreeIndex)) {
+    if (!isTalentAvailableAt(index)) {
       return false;
     }
 
-    return true;
-  }
-
-  bool canRemoveTalentPoint(int specId, int talentTreeIndex) {
-    if (!_isInputValid(specId, talentTreeIndex)) {
-      return false;
-    }
-
-    if (!isTalentAvailable(specId, talentTreeIndex)) {
-      return false;
-    }
-
-    if (!isSafeToRemoveTalentPoint(specId, talentTreeIndex)) {
+    if (isTalentMaxedOutAt(index)) {
       return false;
     }
 
     return true;
   }
 
-  bool isTalentAvailable(int specId, int talentTreeIndex) {
-    if (_spentPoints < (talentTreeIndex ~/ 4) * 5) {
+  bool canRemovePointAt(int index) {
+    if (!_isInputValidAt(index)) {
       return false;
     }
 
-    int dependencyTreeIndex = _talentDependencies[specId][talentTreeIndex];
+    if (!isTalentAvailableAt(index)) {
+      return false;
+    }
 
+    if (!isSafeToRemovePointAt(index)) {
+      return false;
+    }
+
+    return true;
+  }
+
+  bool isTalentAvailableAt(int index) {
+    if (_spentPoints < (index ~/ 4) * 5) {
+      return false;
+    }
+
+    int dependencyTreeIndex = _talentDependencies[_specId][index];
     if (dependencyTreeIndex > 0) {
-      int dependencyState = _treeState[specId][dependencyTreeIndex];
-      int dependencyMaxState = _talentMaxPoints[specId][dependencyTreeIndex];
+      int dependencyState = _treeState[_specId][dependencyTreeIndex];
+      int dependencyMaxState = _talentMaxPoints[_specId][dependencyTreeIndex];
 
       if (dependencyState != dependencyMaxState) {
         return false;
@@ -101,26 +105,48 @@ class WowTalentCalculator {
     return true;
   }
 
-  bool isTalentMaxedOut(int specId, int talentTreeIndex) {
-    if (_treeState[specId][talentTreeIndex] == _talentMaxPoints[specId][talentTreeIndex]) {
+  bool isTalentMaxedOutAt(int index) {
+    if (_treeState[_specId][index] == _talentMaxPoints[_specId][index]) {
       return true;
     }
 
     return false;
   }
 
-  bool isTalentTreeIndexEmpty(int specId, int talentTreeIndex) => _talentTreeLayouts[specId][talentTreeIndex] == 0;
+  bool isPositionEmptyAt(int specId, int index) => _talentTreeLayouts[specId][index] == 0;
 
-  bool isSafeToRemoveTalentPoint(int specId, int talentTreeIndex) {
-    // TODO
+  bool isSafeToRemovePointAt(int index) {
+    /// Check if dependent talent has points
+    if (_talentDependencies[_specId].contains(index)) {
+      int dependentTalent = _talentDependencies[_specId].indexOf(index);
+
+      if (_treeState[_specId][dependentTalent] != 0) {
+        return false;
+      }
+    }
+
+    /// Check highest tier has only 1 point left
+    int currentRow = index ~/ 4;
+    if (currentRow != TalentCalculatorConstants.maxTalentTreeRows[_expansionId] - 1 && _spentPoints % 5 == 1) {
+      return false;
+    }
+
+    /// Check if removing point would break dependency for the next tier
+    if (getRowSumFor(currentRow) - 1 < currentRow * 5 + 5) {
+      return false;
+    }
+
+    int highestRow = _spentPoints ~/ 5;
+    if (_hasRowInvestedPoints(highestRow)) {
+      return false;
+    }
 
     return true;
   }
 
-  TalentTreePosition getTalentTreePositionForIndex(int specId, int talentTreeIndex) => TalentTreePosition(
-        row: talentTreeIndex ~/ 4,
-        column: talentTreeIndex % 4,
-      );
+  bool areAllPointsSpent() {
+    return _spentPoints == _maxTalentPoints;
+  }
 
   void resetSpec(int specId) {
     for (int i = 0; i < _treeState[specId].length; i++) {
@@ -152,7 +178,15 @@ class WowTalentCalculator {
     }
   }
 
+  void printSpecState([int specId = -1]) {
+    print(_buildPrintableSpecState(specId < 0 ? _specId : specId));
+  }
+
   // * ----------------- GETTER & SETTER -----------------
+
+  int get getSpecId => _specId;
+
+  void setSpecId(int specId) => _specId = specId;
 
   int get getSpentPoints => _spentPoints;
 
@@ -162,17 +196,39 @@ class WowTalentCalculator {
     _treeState = treeState;
   }
 
-  void printSpecState(int specId) {
-    print(_buildPrintableSpecState(specId));
+  int getInvestedPointsAt(int index) {
+    if (!_isIndexValid(index)) {
+      return -1;
+    }
+
+    return _treeState[_specId][index];
   }
+
+  int getRowSumFor(int row) {
+    int rowSum = 0;
+
+    for (int i = 0; i < 4; i++) {
+      int state = _treeState[_specId][row * 4 + i];
+      if (state >= 0) {
+        rowSum += state;
+      }
+    }
+
+    return rowSum;
+  }
+
+  Position getPositionFor(int index) => Position(
+        row: index ~/ 4,
+        column: index % 4,
+      );
 
   // * ----------------- PRIVATE METHODS -----------------
 
   void _createTreeState(int expansionId) {
     for (List<int> spec in TalentCalculatorConstants.initialTreeState[expansionId]) {
       List<int> specState = [];
-      for (int talentTreeIndex in spec) {
-        specState.add(talentTreeIndex);
+      for (int index in spec) {
+        specState.add(index);
       }
 
       _treeState.add(specState);
@@ -201,24 +257,31 @@ class WowTalentCalculator {
     return specState;
   }
 
-  bool _isInputValid(int specId, int talentTreeIndex) {
-    if (!_isSpecIdValid(specId)) {
+  bool _isInputValidAt(int index) {
+    if (!_isIndexValid(index)) {
       return false;
     }
 
-    if (!_isTalentTreeIndexValid(talentTreeIndex)) {
-      return false;
-    }
-
-    if (isTalentTreeIndexEmpty(specId, talentTreeIndex)) {
+    if (isPositionEmptyAt(_specId, index)) {
       return false;
     }
 
     return true;
   }
 
-  bool _isSpecIdValid(int specId) => specId >= 0 && specId < TalentCalculatorConstants.expansionAndSpecIds.length;
+  bool _isIndexValid(int index) => index >= 0 && index < _talentTreeLayouts[0].length;
 
-  bool _isTalentTreeIndexValid(int talentTreeIndex) =>
-      talentTreeIndex >= 0 && talentTreeIndex < _talentTreeLayouts[0].length;
+  bool _hasRowInvestedPoints(int highestRow) {
+    if (highestRow >= TalentCalculatorConstants.maxTalentTreeRows[_specId]) {
+      return false;
+    }
+
+    for (int i = 0; i < 4; i++) {
+      if (_treeState[_specId][highestRow * 4 + i] > 0) {
+        return true;
+      }
+    }
+
+    return false;
+  }
 }
