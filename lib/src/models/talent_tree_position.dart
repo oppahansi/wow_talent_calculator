@@ -1,8 +1,8 @@
-class TalentTreePosition {
+class Position {
   final int row;
   final int column;
 
-  TalentTreePosition({
+  Position({
     required this.row,
     required this.column,
   });

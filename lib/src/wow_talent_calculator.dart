@@ -6,7 +6,6 @@ class WowTalentCalculator {
   int _charClassId = 0;
   int _specId = 0;
 
-  int _spentPoints = 0;
   int _maxTalentPoints = 0;
 
   List<List<int>> _treeState = [];
@@ -15,6 +14,8 @@ class WowTalentCalculator {
   List<List<int>> _talentMaxPoints = [];
   List<List<int>> _talentDependencies = [];
   List<String> _specPrintTemplates = [];
+
+  final List<int> _spentPoints = [0, 0, 0];
 
   WowTalentCalculator({int expansionId = 0, int charClassId = 0}) {
     _expansionId = expansionId;
@@ -39,7 +40,7 @@ class WowTalentCalculator {
     }
 
     _treeState[_specId][index]++;
-    _spentPoints++;
+    _spentPoints[_specId]++;
   }
 
   void removePointAt(int index) {
@@ -48,7 +49,7 @@ class WowTalentCalculator {
     }
 
     _treeState[_specId][index]--;
-    _spentPoints--;
+    _spentPoints[_specId]--;
   }
 
   bool canInvestPointAt(int index) {
@@ -88,7 +89,7 @@ class WowTalentCalculator {
   }
 
   bool isTalentAvailableAt(int index) {
-    if (_spentPoints < (index ~/ 4) * 5) {
+    if (_spentPoints[_specId] < (index ~/ 4) * 5) {
       return false;
     }
 
@@ -96,8 +97,9 @@ class WowTalentCalculator {
     if (dependencyTreeIndex > 0) {
       int dependencyState = _treeState[_specId][dependencyTreeIndex];
       int dependencyMaxState = _talentMaxPoints[_specId][dependencyTreeIndex];
+      int dependencyRow = dependencyTreeIndex ~/ 4;
 
-      if (dependencyState != dependencyMaxState) {
+      if (dependencyState != dependencyMaxState || _spentPoints[_specId] < dependencyRow * 5) {
         return false;
       }
     }
@@ -125,19 +127,19 @@ class WowTalentCalculator {
       }
     }
 
-    /// Check highest tier has only 1 point left
+    int pointsInThisTree = getSpentPointsFor(specId: _specId);
+    int maxRows = TalentCalculatorConstants.maxTalentTreeRows[_expansionId];
     int currentRow = index ~/ 4;
-    if (currentRow != TalentCalculatorConstants.maxTalentTreeRows[_expansionId] - 1 && _spentPoints % 5 == 1) {
-      return false;
-    }
+    int highestRow = pointsInThisTree ~/ 5 >= maxRows ? maxRows - 1 : pointsInThisTree ~/ 5;
+    int pointsSumUpToHighestRow = _getPointsSumUpToRow(highestRow);
 
     /// Check if removing point would break dependency for the next tier
-    if (getRowSumFor(currentRow) - 1 < currentRow * 5 + 5) {
+    if (_getRowSumFor(currentRow) - 1 < (currentRow * 5) + 5) {
       return false;
     }
 
-    int highestRow = _spentPoints ~/ 5;
-    if (_hasRowInvestedPoints(highestRow)) {
+    /// Check if removing point would break highest tier
+    if (pointsSumUpToHighestRow - 1 < highestRow * 5) {
       return false;
     }
 
@@ -145,22 +147,23 @@ class WowTalentCalculator {
   }
 
   bool areAllPointsSpent() {
-    return _spentPoints == _maxTalentPoints;
+    return getSpentPoints == _maxTalentPoints;
   }
 
-  void resetSpec(int specId) {
-    for (int i = 0; i < _treeState[specId].length; i++) {
-      if (_treeState[specId][i] < 0) {
+  void resetSpec({int specId = -1}) {
+    int id = specId < 0 ? _specId : specId;
+    for (int i = 0; i < _treeState[id].length; i++) {
+      if (_treeState[id][i] < 0) {
         continue;
       }
-      _spentPoints -= _treeState[specId][i];
-      _treeState[specId][i] = 0;
+      _spentPoints[id] -= _treeState[id][i];
+      _treeState[id][i] = 0;
     }
   }
 
   void resetAll() {
     for (int specId in TalentCalculatorConstants.expansionAndSpecIds) {
-      resetSpec(specId);
+      resetSpec(specId: specId);
     }
   }
 
@@ -188,7 +191,9 @@ class WowTalentCalculator {
 
   void setSpecId(int specId) => _specId = specId;
 
-  int get getSpentPoints => _spentPoints;
+  int get getSpentPoints => _spentPoints.reduce((a, b) => a + b);
+
+  int getSpentPointsFor({int specId = -1}) => _spentPoints[specId < 0 ? _specId : specId];
 
   List<List<int>> get getTreeState => _treeState;
 
@@ -202,19 +207,6 @@ class WowTalentCalculator {
     }
 
     return _treeState[_specId][index];
-  }
-
-  int getRowSumFor(int row) {
-    int rowSum = 0;
-
-    for (int i = 0; i < 4; i++) {
-      int state = _treeState[_specId][row * 4 + i];
-      if (state >= 0) {
-        rowSum += state;
-      }
-    }
-
-    return rowSum;
   }
 
   Position getPositionFor(int index) => Position(
@@ -271,17 +263,26 @@ class WowTalentCalculator {
 
   bool _isIndexValid(int index) => index >= 0 && index < _talentTreeLayouts[0].length;
 
-  bool _hasRowInvestedPoints(int highestRow) {
-    if (highestRow >= TalentCalculatorConstants.maxTalentTreeRows[_specId]) {
-      return false;
+  int _getPointsSumUpToRow(int row) {
+    int sum = 0;
+
+    for (int i = 0; i < row; i++) {
+      sum += _getRowSumFor(i);
     }
 
+    return sum;
+  }
+
+  int _getRowSumFor(int row) {
+    int rowSum = 0;
+
     for (int i = 0; i < 4; i++) {
-      if (_treeState[_specId][highestRow * 4 + i] > 0) {
-        return true;
+      int state = _treeState[_specId][row * 4 + i];
+      if (state >= 0) {
+        rowSum += state;
       }
     }
 
-    return false;
+    return rowSum;
   }
 }
