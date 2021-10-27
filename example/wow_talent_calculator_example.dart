@@ -14,5 +14,5 @@ void main() {
     wtc.investPointAt(4);
   }
 
-  wtc.printSpecState();
+  wtc.printSpec();
 }

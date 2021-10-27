@@ -17,6 +17,10 @@ class WowTalentCalculator {
 
   final List<int> _spentPoints = [0, 0, 0];
 
+  /// Default constructor
+  ///
+  /// When no parameters are provided, [expansionId] and [charclassId] are both set to 0
+  /// This means expansion will be Vanilla / Classic WoW and the character class will be Druid
   WowTalentCalculator({int expansionId = 0, int charClassId = 0}) {
     _expansionId = expansionId;
     _charClassId = charClassId;
@@ -34,6 +38,7 @@ class WowTalentCalculator {
 
   // * ----------------- PUBLIC METHODS -----------------
 
+  /// Invests a talent point in talent at [index]
   void investPointAt(int index) {
     if (!canInvestPointAt(index)) {
       return;
@@ -43,6 +48,7 @@ class WowTalentCalculator {
     _spentPoints[_specId]++;
   }
 
+  /// Removes a talent point from talent at [index]
   void removePointAt(int index) {
     if (!canRemovePointAt(index)) {
       return;
@@ -52,6 +58,11 @@ class WowTalentCalculator {
     _spentPoints[_specId]--;
   }
 
+  /// Checks whether or not it is possible to invest a talent point at [index]
+  ///
+  /// Checks whether or not all talent points are spent
+  /// Checks whether or not input [index] is valid
+  /// Checks whether or not the talent at [index] is available
   bool canInvestPointAt(int index) {
     if (areAllPointsSpent()) {
       return false;
@@ -72,6 +83,11 @@ class WowTalentCalculator {
     return true;
   }
 
+  /// Checks whether or not removing from talent at [index] is possible
+  ///
+  /// Checks wheter or not the inpunt [index] is valid
+  /// Checks whether or not the talent at [index] is available
+  /// Checks whether or not it is safe to remove a point at [index]
   bool canRemovePointAt(int index) {
     if (!_isInputValidAt(index)) {
       return false;
@@ -88,6 +104,10 @@ class WowTalentCalculator {
     return true;
   }
 
+  /// Returns true when talent at [index] is available
+  ///
+  /// Checks for minimum required spent points in current tree
+  /// Checks for met dependencies
   bool isTalentAvailableAt(int index) {
     if (_spentPoints[_specId] < (index ~/ 4) * 5) {
       return false;
@@ -107,6 +127,7 @@ class WowTalentCalculator {
     return true;
   }
 
+  // Returns true when talent is maxed out
   bool isTalentMaxedOutAt(int index) {
     if (_treeState[_specId][index] == _talentMaxPoints[_specId][index]) {
       return true;
@@ -115,13 +136,17 @@ class WowTalentCalculator {
     return false;
   }
 
-  bool isPositionEmptyAt(int specId, int index) => _talentTreeLayouts[specId][index] == 0;
+  /// Checks whether or not there is a talent at the specified tree index
+  bool isPositionEmptyAt(int index) => _talentTreeLayouts[_specId][index] == 0;
 
+  /// Checks wheter or not it is safe to remove a talent point at [index]
+  ///
+  /// Checks if dependent talent has points
+  /// Checks if removing point would break dependency for the next tier
+  /// Checks if removing point would break highest tier
   bool isSafeToRemovePointAt(int index) {
-    /// Check if dependent talent has points
     if (_talentDependencies[_specId].contains(index)) {
       int dependentTalent = _talentDependencies[_specId].indexOf(index);
-
       if (_treeState[_specId][dependentTalent] != 0) {
         return false;
       }
@@ -133,12 +158,10 @@ class WowTalentCalculator {
     int highestRow = pointsInThisTree ~/ 5 >= maxRows ? maxRows - 1 : pointsInThisTree ~/ 5;
     int pointsSumUpToHighestRow = _getPointsSumUpToRow(highestRow);
 
-    /// Check if removing point would break dependency for the next tier
     if (_getRowSumFor(currentRow) - 1 < (currentRow * 5) + 5) {
       return false;
     }
 
-    /// Check if removing point would break highest tier
     if (pointsSumUpToHighestRow - 1 < highestRow * 5) {
       return false;
     }
@@ -146,10 +169,14 @@ class WowTalentCalculator {
     return true;
   }
 
+  /// Returns true when [getSpentPoints] equals [_maxTalentPoints]
   bool areAllPointsSpent() {
     return getSpentPoints() == _maxTalentPoints;
   }
 
+  /// Resets a spec
+  ///
+  /// If no [specId] is provided, the current set [_specId] will be reset
   void resetSpec({int specId = -1}) {
     int id = specId < 0 ? _specId : specId;
     for (int i = 0; i < _treeState[id].length; i++) {
@@ -161,13 +188,15 @@ class WowTalentCalculator {
     }
   }
 
+  /// Resets all specs
   void resetAll() {
     for (int specId in TalentCalculatorConstants.expansionAndSpecIds) {
       resetSpec(specId: specId);
     }
   }
 
-  void printCharClassState() {
+  /// Prints all specs in console
+  void printAllSpecs() {
     String specState0 = _buildPrintableSpecState(0);
     String specState1 = _buildPrintableSpecState(1);
     String specState2 = _buildPrintableSpecState(2);
@@ -181,7 +210,10 @@ class WowTalentCalculator {
     }
   }
 
-  void printSpecState([int specId = -1]) {
+  /// Prints spec
+  ///
+  /// If no [specId] is provided, the current [_specId] spec will be printed
+  void printSpec([int specId = -1]) {
     print(_buildPrintableSpecState(specId < 0 ? _specId : specId));
   }
 
@@ -217,10 +249,7 @@ class WowTalentCalculator {
     return _treeState[_specId][index];
   }
 
-  Position getPositionFor(int index) => Position(
-        row: index ~/ 4,
-        column: index % 4,
-      );
+  Position getPositionFor(int index) => Position(row: index ~/ 4, column: index % 4);
 
   // * ----------------- PRIVATE METHODS -----------------
 
@@ -262,7 +291,7 @@ class WowTalentCalculator {
       return false;
     }
 
-    if (isPositionEmptyAt(_specId, index)) {
+    if (isPositionEmptyAt(index)) {
       return false;
     }
 
