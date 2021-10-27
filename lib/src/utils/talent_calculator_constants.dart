@@ -28,6 +28,8 @@ class TalentCalculatorConstants {
 
   static const List<int> maxTalentTreeRows = [7, 9, 11];
 
+  static const List<int> talentTeeLengths = [28, 36, 44];
+
   static const List<List<List<int>>> initialTreeState = [
     [
       [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
