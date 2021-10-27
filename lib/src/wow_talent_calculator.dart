@@ -127,7 +127,7 @@ class WowTalentCalculator {
       }
     }
 
-    int pointsInThisTree = getSpentPointsFor(specId: _specId);
+    int pointsInThisTree = getSpentPoints(specId: _specId);
     int maxRows = TalentCalculatorConstants.maxTalentTreeRows[_expansionId];
     int currentRow = index ~/ 4;
     int highestRow = pointsInThisTree ~/ 5 >= maxRows ? maxRows - 1 : pointsInThisTree ~/ 5;
@@ -147,7 +147,7 @@ class WowTalentCalculator {
   }
 
   bool areAllPointsSpent() {
-    return getSpentPoints == _maxTalentPoints;
+    return getSpentPoints() == _maxTalentPoints;
   }
 
   void resetSpec({int specId = -1}) {
@@ -187,13 +187,21 @@ class WowTalentCalculator {
 
   // * ----------------- GETTER & SETTER -----------------
 
+  int get getExpansionId => _expansionId;
+
+  int get getCharClassId => _charClassId;
+
   int get getSpecId => _specId;
 
   void setSpecId(int specId) => _specId = specId;
 
-  int get getSpentPoints => _spentPoints.reduce((a, b) => a + b);
+  int getSpentPoints({int specId = -1}) {
+    if (specId == -1) {
+      return _spentPoints.reduce((a, b) => a + b);
+    }
 
-  int getSpentPointsFor({int specId = -1}) => _spentPoints[specId < 0 ? _specId : specId];
+    return _spentPoints[specId];
+  }
 
   List<List<int>> get getTreeState => _treeState;
 
