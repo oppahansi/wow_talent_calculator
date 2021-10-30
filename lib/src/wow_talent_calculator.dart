@@ -1,3 +1,4 @@
+import '../src/utils/extensions.dart';
 import 'models/talent_tree_position.dart';
 import 'utils/talent_calculator_constants.dart';
 
@@ -225,7 +226,7 @@ class WowTalentCalculator {
 
   int get getSpecId => _specId;
 
-  void setSpecId(int specId) => _specId = specId;
+  set setSpecId(int specId) => _specId = specId;
 
   int getSpentPoints({int specId = -1}) {
     if (specId == -1) {
@@ -237,9 +238,7 @@ class WowTalentCalculator {
 
   List<List<int>> get getTreeState => _treeState;
 
-  void setTreeState(List<List<int>> treeState) {
-    _treeState = treeState;
-  }
+  set setTreeState(List<List<int>> treeState) => _treeState = treeState;
 
   int getInvestedPointsAt(int index) {
     if (!_isIndexValid(index)) {
@@ -250,6 +249,8 @@ class WowTalentCalculator {
   }
 
   Position getPositionFor(int index) => Position(row: index ~/ 4, column: index % 4);
+
+  int getDependeesAmount(int index) => _talentDependencies[_specId].count(index);
 
   // * ----------------- PRIVATE METHODS -----------------
 
