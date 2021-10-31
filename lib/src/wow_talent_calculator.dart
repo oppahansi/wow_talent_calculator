@@ -9,7 +9,8 @@ class WowTalentCalculator {
 
   int _maxTalentPoints = 0;
 
-  List<List<int>> _treeState = [];
+  List<List<int>> _treeStates = [];
+  List<List<bool>> _availabilityStates = [];
 
   List<List<int>> _talentTreeLayouts = [];
   List<List<int>> _talentMaxPoints = [];
@@ -34,7 +35,9 @@ class WowTalentCalculator {
     _specPrintTemplates = List.from(TalentCalculatorConstants.specPrintTemplates[_expansionId][_charClassId]);
 
     _createTreeState(_expansionId);
+    _createAvailabilityStates(_expansionId);
     _initTreeState();
+    _initAvailabilityStates();
   }
 
   // * ----------------- PUBLIC METHODS -----------------
@@ -45,8 +48,9 @@ class WowTalentCalculator {
       return;
     }
 
-    _treeState[_specId][index]++;
+    _treeStates[_specId][index]++;
     _spentPoints[_specId]++;
+    _updateAvailabilityStates();
   }
 
   /// Removes a talent point from talent at [index]
@@ -55,8 +59,9 @@ class WowTalentCalculator {
       return;
     }
 
-    _treeState[_specId][index]--;
+    _treeStates[_specId][index]--;
     _spentPoints[_specId]--;
+    _updateAvailabilityStates();
   }
 
   /// Checks whether or not it is possible to invest a talent point at [index]
@@ -116,7 +121,7 @@ class WowTalentCalculator {
 
     int dependencyTreeIndex = _talentDependencies[_specId][index];
     if (dependencyTreeIndex > 0) {
-      int dependencyState = _treeState[_specId][dependencyTreeIndex];
+      int dependencyState = _treeStates[_specId][dependencyTreeIndex];
       int dependencyMaxState = _talentMaxPoints[_specId][dependencyTreeIndex];
       int dependencyRow = dependencyTreeIndex ~/ 4;
 
@@ -130,7 +135,7 @@ class WowTalentCalculator {
 
   // Returns true when talent is maxed out
   bool isTalentMaxedOutAt(int index) {
-    if (_treeState[_specId][index] == _talentMaxPoints[_specId][index]) {
+    if (_treeStates[_specId][index] == _talentMaxPoints[_specId][index]) {
       return true;
     }
 
@@ -148,7 +153,7 @@ class WowTalentCalculator {
   bool isSafeToRemovePointAt(int index) {
     if (_talentDependencies[_specId].contains(index)) {
       int dependentTalent = _talentDependencies[_specId].indexOf(index);
-      if (_treeState[_specId][dependentTalent] != 0) {
+      if (_treeStates[_specId][dependentTalent] != 0) {
         return false;
       }
     }
@@ -180,13 +185,15 @@ class WowTalentCalculator {
   /// If no [specId] is provided, the current set [_specId] will be reset
   void resetSpec({int specId = -1}) {
     int id = specId < 0 ? _specId : specId;
-    for (int i = 0; i < _treeState[id].length; i++) {
-      if (_treeState[id][i] < 0) {
+    for (int i = 0; i < _treeStates[id].length; i++) {
+      if (_treeStates[id][i] < 0) {
         continue;
       }
-      _spentPoints[id] -= _treeState[id][i];
-      _treeState[id][i] = 0;
+      _spentPoints[id] -= _treeStates[id][i];
+      _treeStates[id][i] = 0;
     }
+
+    _updateAvailabilityStates(specId: id);
   }
 
   /// Resets all specs
@@ -226,7 +233,11 @@ class WowTalentCalculator {
 
   int get getSpecId => _specId;
 
-  set setSpecId(int specId) => _specId = specId;
+  List<List<int>> get getTreeState => _treeStates;
+
+  List<bool> get getAvailabilityStates => _availabilityStates[_specId];
+
+  bool getAvailabilityStateAt(int index) => _availabilityStates[_specId][index];
 
   int getSpentPoints({int specId = -1}) {
     if (specId == -1) {
@@ -236,21 +247,21 @@ class WowTalentCalculator {
     return _spentPoints[specId];
   }
 
-  List<List<int>> get getTreeState => _treeState;
-
-  set setTreeState(List<List<int>> treeState) => _treeState = treeState;
-
   int getInvestedPointsAt(int index) {
     if (!_isIndexValid(index)) {
       return -1;
     }
 
-    return _treeState[_specId][index];
+    return _treeStates[_specId][index];
   }
 
   Position getPositionFor(int index) => Position(row: index ~/ 4, column: index % 4);
 
   int getDependeesAmount(int index) => _talentDependencies[_specId].count(index);
+
+  set setSpecId(int specId) => _specId = specId;
+
+  set setTreeState(List<List<int>> treeState) => _treeStates = treeState;
 
   // * ----------------- PRIVATE METHODS -----------------
 
@@ -261,23 +272,55 @@ class WowTalentCalculator {
         specState.add(index);
       }
 
-      _treeState.add(specState);
+      _treeStates.add(specState);
+    }
+  }
+
+  void _createAvailabilityStates(int expansionId) {
+    for (List<bool> spec in TalentCalculatorConstants.initialAvailabilityState[expansionId]) {
+      List<bool> specState = [];
+      for (bool index in spec) {
+        specState.add(index);
+      }
+
+      _availabilityStates.add(specState);
     }
   }
 
   void _initTreeState() {
-    for (int i = 0; i < _treeState.length; i++) {
-      for (int j = 0; j < _treeState[i].length; j++) {
+    for (int i = 0; i < _treeStates.length; i++) {
+      for (int j = 0; j < _treeStates[i].length; j++) {
         if (_talentTreeLayouts[i][j] == 1) {
-          _treeState[i][j] = 0;
+          _treeStates[i][j] = 0;
         }
+      }
+    }
+  }
+
+  void _initAvailabilityStates() {
+    for (int i = 0; i < _availabilityStates.length; i++) {
+      for (int j = 0; j < _availabilityStates[i].length; j++) {
+        if (_isInputValidAt(j)) {
+          _availabilityStates[i][j] = isTalentAvailableAt(j);
+        }
+      }
+    }
+  }
+
+  void _updateAvailabilityStates({int specId = -1}) {
+    int id = specId < 0 ? _specId : specId;
+    for (int i = 0; i < _availabilityStates[id].length; i++) {
+      if (_isInputValidAt(i)) {
+        _availabilityStates[id][i] = isTalentAvailableAt(i);
+      } else {
+        _availabilityStates[id][i] = false;
       }
     }
   }
 
   String _buildPrintableSpecState(int specId) {
     String specState = _specPrintTemplates[specId];
-    for (int talentState in _treeState[specId]) {
+    for (int talentState in _treeStates[specId]) {
       if (talentState < 0) {
         continue;
       }
@@ -315,7 +358,7 @@ class WowTalentCalculator {
     int rowSum = 0;
 
     for (int i = 0; i < 4; i++) {
-      int state = _treeState[_specId][row * 4 + i];
+      int state = _treeStates[_specId][row * 4 + i];
       if (state >= 0) {
         rowSum += state;
       }
