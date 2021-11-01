@@ -5,7 +5,7 @@ import 'utils/talent_calculator_constants.dart';
 class WowTalentCalculator {
   int _expansionId = 0;
   int _charClassId = 0;
-  int _specId = 0;
+  int specId = 0;
 
   int _maxTalentPoints = 0;
 
@@ -43,24 +43,24 @@ class WowTalentCalculator {
   // * ----------------- PUBLIC METHODS -----------------
 
   /// Invests a talent point in talent at [index]
-  void investPointAt(int index) {
-    if (!canInvestPointAt(index)) {
+  void investPointAt(int specId, int index) {
+    if (!canInvestPointAt(specId, index)) {
       return;
     }
 
-    _treeStates[_specId][index]++;
-    _spentPoints[_specId]++;
+    _treeStates[specId][index]++;
+    _spentPoints[specId]++;
     _updateAvailabilityStates();
   }
 
   /// Removes a talent point from talent at [index]
-  void removePointAt(int index) {
-    if (!canRemovePointAt(index)) {
+  void removePointAt(int specId, int index) {
+    if (!canRemovePointAt(specId, index)) {
       return;
     }
 
-    _treeStates[_specId][index]--;
-    _spentPoints[_specId]--;
+    _treeStates[specId][index]--;
+    _spentPoints[specId]--;
     _updateAvailabilityStates();
   }
 
@@ -69,20 +69,20 @@ class WowTalentCalculator {
   /// Checks whether or not all talent points are spent
   /// Checks whether or not input [index] is valid
   /// Checks whether or not the talent at [index] is available
-  bool canInvestPointAt(int index) {
+  bool canInvestPointAt(int specId, int index) {
     if (areAllPointsSpent()) {
       return false;
     }
 
-    if (!_isInputValidAt(index)) {
+    if (!_isInputValidAt(specId, index)) {
       return false;
     }
 
-    if (!isTalentAvailableAt(index)) {
+    if (!isTalentAvailableAt(specId, index)) {
       return false;
     }
 
-    if (isTalentMaxedOutAt(index)) {
+    if (isTalentMaxedOutAt(specId, index)) {
       return false;
     }
 
@@ -94,16 +94,16 @@ class WowTalentCalculator {
   /// Checks wheter or not the inpunt [index] is valid
   /// Checks whether or not the talent at [index] is available
   /// Checks whether or not it is safe to remove a point at [index]
-  bool canRemovePointAt(int index) {
-    if (!_isInputValidAt(index)) {
+  bool canRemovePointAt(int specId, int index) {
+    if (!_isInputValidAt(specId, index)) {
       return false;
     }
 
-    if (!isTalentAvailableAt(index)) {
+    if (!isTalentAvailableAt(specId, index)) {
       return false;
     }
 
-    if (!isSafeToRemovePointAt(index)) {
+    if (!isSafeToRemovePointAt(specId, index)) {
       return false;
     }
 
@@ -114,18 +114,18 @@ class WowTalentCalculator {
   ///
   /// Checks for minimum required spent points in current tree
   /// Checks for met dependencies
-  bool isTalentAvailableAt(int index) {
-    if (_spentPoints[_specId] < (index ~/ 4) * 5) {
+  bool isTalentAvailableAt(int specId, int index) {
+    if (index ~/ 4 > 0 && _spentPoints[specId] < (index ~/ 4) * 5) {
       return false;
     }
 
-    int dependencyTreeIndex = _talentDependencies[_specId][index];
+    int dependencyTreeIndex = _talentDependencies[specId][index];
     if (dependencyTreeIndex > 0) {
-      int dependencyState = _treeStates[_specId][dependencyTreeIndex];
-      int dependencyMaxState = _talentMaxPoints[_specId][dependencyTreeIndex];
+      int dependencyState = _treeStates[specId][dependencyTreeIndex];
+      int dependencyMaxState = _talentMaxPoints[specId][dependencyTreeIndex];
       int dependencyRow = dependencyTreeIndex ~/ 4;
 
-      if (dependencyState != dependencyMaxState || _spentPoints[_specId] < dependencyRow * 5) {
+      if (dependencyState != dependencyMaxState || _spentPoints[specId] < dependencyRow * 5) {
         return false;
       }
     }
@@ -134,8 +134,8 @@ class WowTalentCalculator {
   }
 
   // Returns true when talent is maxed out
-  bool isTalentMaxedOutAt(int index) {
-    if (_treeStates[_specId][index] == _talentMaxPoints[_specId][index]) {
+  bool isTalentMaxedOutAt(int specId, int index) {
+    if (_treeStates[specId][index] == _talentMaxPoints[specId][index]) {
       return true;
     }
 
@@ -143,28 +143,28 @@ class WowTalentCalculator {
   }
 
   /// Checks whether or not there is a talent at the specified tree index
-  bool isPositionEmptyAt(int index) => _talentTreeLayouts[_specId][index] == 0;
+  bool isPositionEmptyAt(int specId, int index) => _talentTreeLayouts[specId][index] == 0;
 
   /// Checks wheter or not it is safe to remove a talent point at [index]
   ///
   /// Checks if dependent talent has points
   /// Checks if removing point would break dependency for the next tier
   /// Checks if removing point would break highest tier
-  bool isSafeToRemovePointAt(int index) {
-    if (_talentDependencies[_specId].contains(index)) {
-      int dependentTalent = _talentDependencies[_specId].indexOf(index);
-      if (_treeStates[_specId][dependentTalent] != 0) {
+  bool isSafeToRemovePointAt(int specId, int index) {
+    if (_talentDependencies[specId].contains(index)) {
+      int dependentTalent = _talentDependencies[specId].indexOf(index);
+      if (_treeStates[specId][dependentTalent] != 0) {
         return false;
       }
     }
 
-    int pointsInThisTree = getSpentPoints(specId: _specId);
+    int pointsInThisTree = getSpentPoints(specId: specId);
     int maxRows = TalentCalculatorConstants.maxTalentTreeRows[_expansionId];
     int currentRow = index ~/ 4;
     int highestRow = pointsInThisTree ~/ 5 >= maxRows ? maxRows - 1 : pointsInThisTree ~/ 5;
-    int pointsSumUpToHighestRow = _getPointsSumUpToRow(highestRow);
+    int pointsSumUpToHighestRow = _getPointsSumUpToRow(specId, highestRow);
 
-    if (_getRowSumFor(currentRow) - 1 < (currentRow * 5) + 5) {
+    if (_getRowSumFor(specId, currentRow) - 1 < (currentRow * 5) + 5) {
       return false;
     }
 
@@ -182,24 +182,24 @@ class WowTalentCalculator {
 
   /// Resets a spec
   ///
-  /// If no [specId] is provided, the current set [_specId] will be reset
-  void resetSpec({int specId = -1}) {
-    int id = specId < 0 ? _specId : specId;
-    for (int i = 0; i < _treeStates[id].length; i++) {
-      if (_treeStates[id][i] < 0) {
+  /// If no [specId] is provided, the current set [specId] will be reset
+  void resetSpec(int specId) {
+    for (int i = 0; i < _treeStates[specId].length; i++) {
+      if (_treeStates[specId][i] < 0) {
         continue;
       }
-      _spentPoints[id] -= _treeStates[id][i];
-      _treeStates[id][i] = 0;
+
+      _treeStates[specId][i] = 0;
     }
 
-    _updateAvailabilityStates(specId: id);
+    _spentPoints[specId] = 0;
+    _updateAvailabilityStates();
   }
 
   /// Resets all specs
   void resetAll() {
     for (int specId in TalentCalculatorConstants.expansionAndSpecIds) {
-      resetSpec(specId: specId);
+      resetSpec(specId);
     }
   }
 
@@ -219,10 +219,8 @@ class WowTalentCalculator {
   }
 
   /// Prints spec
-  ///
-  /// If no [specId] is provided, the current [_specId] spec will be printed
-  void printSpec([int specId = -1]) {
-    print(_buildPrintableSpecState(specId < 0 ? _specId : specId));
+  void printSpec(int specId) {
+    print(_buildPrintableSpecState(specId));
   }
 
   // * ----------------- GETTER & SETTER -----------------
@@ -231,13 +229,11 @@ class WowTalentCalculator {
 
   int get getCharClassId => _charClassId;
 
-  int get getSpecId => _specId;
-
   List<List<int>> get getTreeState => _treeStates;
 
-  List<bool> get getAvailabilityStates => _availabilityStates[_specId];
+  List<List<bool>> get getAvailabilityStates => _availabilityStates;
 
-  bool getAvailabilityStateAt(int index) => _availabilityStates[_specId][index];
+  bool getAvailabilityStateAt(int specId, int index) => _availabilityStates[specId][index];
 
   int getSpentPoints({int specId = -1}) {
     if (specId == -1) {
@@ -247,19 +243,17 @@ class WowTalentCalculator {
     return _spentPoints[specId];
   }
 
-  int getInvestedPointsAt(int index) {
+  int getInvestedPointsAt(int specId, int index) {
     if (!_isIndexValid(index)) {
       return -1;
     }
 
-    return _treeStates[_specId][index];
+    return _treeStates[specId][index];
   }
 
   Position getPositionFor(int index) => Position(row: index ~/ 4, column: index % 4);
 
-  int getDependeesAmount(int index) => _talentDependencies[_specId].count(index);
-
-  set setSpecId(int specId) => _specId = specId;
+  int getDependeesAmount(int specId, int index) => _talentDependencies[specId].count(index);
 
   set setTreeState(List<List<int>> treeState) => _treeStates = treeState;
 
@@ -298,22 +292,23 @@ class WowTalentCalculator {
   }
 
   void _initAvailabilityStates() {
-    for (int i = 0; i < _availabilityStates.length; i++) {
-      for (int j = 0; j < _availabilityStates[i].length; j++) {
-        if (_isInputValidAt(j)) {
-          _availabilityStates[i][j] = isTalentAvailableAt(j);
+    for (int specId = 0; specId < _availabilityStates.length; specId++) {
+      for (int index = 0; index < _availabilityStates[specId].length; index++) {
+        if (_isInputValidAt(specId, index)) {
+          _availabilityStates[specId][index] = isTalentAvailableAt(specId, index);
         }
       }
     }
   }
 
-  void _updateAvailabilityStates({int specId = -1}) {
-    int id = specId < 0 ? _specId : specId;
-    for (int i = 0; i < _availabilityStates[id].length; i++) {
-      if (_isInputValidAt(i)) {
-        _availabilityStates[id][i] = isTalentAvailableAt(i);
-      } else {
-        _availabilityStates[id][i] = false;
+  void _updateAvailabilityStates() {
+    for (int specId = 0; specId < _availabilityStates.length; specId++) {
+      for (int index = 0; index < _availabilityStates[specId].length; index++) {
+        if (_isInputValidAt(specId, index)) {
+          _availabilityStates[specId][index] = isTalentAvailableAt(specId, index);
+        } else {
+          _availabilityStates[specId][index] = false;
+        }
       }
     }
   }
@@ -330,12 +325,12 @@ class WowTalentCalculator {
     return specState;
   }
 
-  bool _isInputValidAt(int index) {
+  bool _isInputValidAt(int specId, int index) {
     if (!_isIndexValid(index)) {
       return false;
     }
 
-    if (isPositionEmptyAt(index)) {
+    if (isPositionEmptyAt(specId, index)) {
       return false;
     }
 
@@ -344,21 +339,21 @@ class WowTalentCalculator {
 
   bool _isIndexValid(int index) => index >= 0 && index < _talentTreeLayouts[0].length;
 
-  int _getPointsSumUpToRow(int row) {
+  int _getPointsSumUpToRow(int specId, int row) {
     int sum = 0;
 
     for (int i = 0; i < row; i++) {
-      sum += _getRowSumFor(i);
+      sum += _getRowSumFor(specId, i);
     }
 
     return sum;
   }
 
-  int _getRowSumFor(int row) {
+  int _getRowSumFor(int specId, int row) {
     int rowSum = 0;
 
     for (int i = 0; i < 4; i++) {
-      int state = _treeStates[_specId][row * 4 + i];
+      int state = _treeStates[specId][row * 4 + i];
       if (state >= 0) {
         rowSum += state;
       }
