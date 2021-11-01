@@ -1,6 +1,5 @@
-import '../src/utils/extensions.dart';
-import 'models/talent_tree_position.dart';
-import 'utils/talent_calculator_constants.dart';
+import './extensions.dart';
+import './talent_calculator_constants.dart';
 
 class WowTalentCalculator {
   int _expansionId = 0;
@@ -158,7 +157,7 @@ class WowTalentCalculator {
       }
     }
 
-    int pointsInThisTree = getSpentPoints(specId: specId);
+    int pointsInThisTree = getSpentPoints(specId);
     int maxRows = TalentCalculatorConstants.maxTalentTreeRows[_expansionId];
     int currentRow = index ~/ 4;
     int highestRow = pointsInThisTree ~/ 5 >= maxRows ? maxRows - 1 : pointsInThisTree ~/ 5;
@@ -225,23 +224,9 @@ class WowTalentCalculator {
 
   // * ----------------- GETTER & SETTER -----------------
 
-  int get getExpansionId => _expansionId;
-
-  int get getCharClassId => _charClassId;
-
-  List<List<int>> get getTreeState => _treeStates;
-
-  List<List<bool>> get getAvailabilityStates => _availabilityStates;
-
-  bool getAvailabilityStateAt(int specId, int index) => _availabilityStates[specId][index];
-
-  List<List<bool>> get getMaxedOutStates => _maxedOutStates;
-
-  bool getMaxedOutStateAt(int specId, int index) => _maxedOutStates[specId][index];
-
-  int getSpentPoints({int specId = -1}) {
+  int getSpentPoints([int specId = -1]) {
     if (specId == -1) {
-      return _spentPoints.reduce((a, b) => a + b);
+      return _spentPoints[0] + _spentPoints[1] + _spentPoints[2];
     }
 
     return _spentPoints[specId];
@@ -255,9 +240,23 @@ class WowTalentCalculator {
     return _treeStates[specId][index];
   }
 
-  Position getPositionFor(int index) => Position(row: index ~/ 4, column: index % 4);
+  bool getAvailabilityStateAt(int specId, int index) => _availabilityStates[specId][index];
+
+  bool getMaxedOutStateAt(int specId, int index) => _maxedOutStates[specId][index];
 
   int getDependeesAmount(int specId, int index) => _talentDependencies[specId].count(index);
+
+  int get getMaxTalentPoints => TalentCalculatorConstants.maxTalentPoints[_expansionId];
+
+  int get getExpansionId => _expansionId;
+
+  int get getCharClassId => _charClassId;
+
+  List<List<int>> get getTreeState => _treeStates;
+
+  List<List<bool>> get getAvailabilityStates => _availabilityStates;
+
+  List<List<bool>> get getMaxedOutStates => _maxedOutStates;
 
   set setTreeState(List<List<int>> treeState) => _treeStates = treeState;
 

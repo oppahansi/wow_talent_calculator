@@ -96,27 +96,27 @@ void main() {
     });
 
     test('should increase when point is invested in an available talent', () {
-      int spentPoints = wtc.getSpentPoints(specId: 0);
+      int spentPoints = wtc.getSpentPoints(0);
       wtc.investPointAt(0, 1);
-      expect(wtc.getSpentPoints(specId: 0), spentPoints + 1);
+      expect(wtc.getSpentPoints(0), spentPoints + 1);
     });
 
     test('should not change when investing a point in an unvailable talent', () {
-      int spentPoints = wtc.getSpentPoints(specId: 0);
+      int spentPoints = wtc.getSpentPoints(0);
       wtc.investPointAt(0, 8);
-      expect(wtc.getSpentPoints(specId: 0), spentPoints);
+      expect(wtc.getSpentPoints(0), spentPoints);
     });
 
     test('should not change when investing a point in a maxed out talent', () {
-      int spentPoints = wtc.getSpentPoints(specId: 0);
+      int spentPoints = wtc.getSpentPoints(0);
       wtc.investPointAt(0, 0);
-      expect(wtc.getSpentPoints(specId: 0), spentPoints);
+      expect(wtc.getSpentPoints(0), spentPoints);
     });
 
     test('should not change when investing a point in a not existing talent', () {
-      int spentPoints = wtc.getSpentPoints(specId: 0);
+      int spentPoints = wtc.getSpentPoints(0);
       wtc.investPointAt(0, 3);
-      expect(wtc.getSpentPoints(specId: 0), spentPoints);
+      expect(wtc.getSpentPoints(0), spentPoints);
     });
   });
 
