@@ -5,12 +5,8 @@ import 'utils/talent_calculator_constants.dart';
 class WowTalentCalculator {
   int _expansionId = 0;
   int _charClassId = 0;
-  int specId = 0;
-
-  int _maxTalentPoints = 0;
 
   List<List<int>> _treeStates = [];
-  List<List<bool>> _availabilityStates = [];
 
   List<List<int>> _talentTreeLayouts = [];
   List<List<int>> _talentMaxPoints = [];
@@ -18,6 +14,8 @@ class WowTalentCalculator {
   List<String> _specPrintTemplates = [];
 
   final List<int> _spentPoints = [0, 0, 0];
+  final List<List<bool>> _availabilityStates = [];
+  final List<List<bool>> _maxedOutStates = [];
 
   /// Default constructor
   ///
@@ -27,8 +25,6 @@ class WowTalentCalculator {
     _expansionId = expansionId;
     _charClassId = charClassId;
 
-    _maxTalentPoints = TalentCalculatorConstants.maxTalentPoints[_expansionId];
-
     _talentTreeLayouts = List.from(TalentCalculatorConstants.talentLayouts[_expansionId][_charClassId]);
     _talentMaxPoints = List.from(TalentCalculatorConstants.talentMaxPoints[_expansionId][_charClassId]);
     _talentDependencies = List.from(TalentCalculatorConstants.talentDependencies[_expansionId][_charClassId]);
@@ -36,8 +32,12 @@ class WowTalentCalculator {
 
     _createTreeState(_expansionId);
     _createAvailabilityStates(_expansionId);
+    _createMaxedOutStates(_expansionId);
+
     _initTreeState();
-    _initAvailabilityStates();
+
+    _updateAvailabilityStates();
+    _updateMaxedOutStates();
   }
 
   // * ----------------- PUBLIC METHODS -----------------
@@ -177,7 +177,7 @@ class WowTalentCalculator {
 
   /// Returns true when [getSpentPoints] equals [_maxTalentPoints]
   bool areAllPointsSpent() {
-    return getSpentPoints() == _maxTalentPoints;
+    return getSpentPoints() == TalentCalculatorConstants.maxTalentPoints[_expansionId];
   }
 
   /// Resets a spec
@@ -235,6 +235,10 @@ class WowTalentCalculator {
 
   bool getAvailabilityStateAt(int specId, int index) => _availabilityStates[specId][index];
 
+  List<List<bool>> get getMaxedOutStates => _maxedOutStates;
+
+  bool getMaxedOutStateAt(int specId, int index) => _maxedOutStates[specId][index];
+
   int getSpentPoints({int specId = -1}) {
     if (specId == -1) {
       return _spentPoints.reduce((a, b) => a + b);
@@ -273,6 +277,7 @@ class WowTalentCalculator {
   void _createAvailabilityStates(int expansionId) {
     for (List<bool> spec in TalentCalculatorConstants.initialAvailabilityState[expansionId]) {
       List<bool> specState = [];
+
       for (bool index in spec) {
         specState.add(index);
       }
@@ -291,23 +296,37 @@ class WowTalentCalculator {
     }
   }
 
-  void _initAvailabilityStates() {
+  void _updateAvailabilityStates() {
     for (int specId = 0; specId < _availabilityStates.length; specId++) {
       for (int index = 0; index < _availabilityStates[specId].length; index++) {
-        if (_isInputValidAt(specId, index)) {
+        if (isPositionEmptyAt(specId, index)) {
+          _availabilityStates[specId][index] = false;
+        } else {
           _availabilityStates[specId][index] = isTalentAvailableAt(specId, index);
         }
       }
     }
   }
 
-  void _updateAvailabilityStates() {
-    for (int specId = 0; specId < _availabilityStates.length; specId++) {
-      for (int index = 0; index < _availabilityStates[specId].length; index++) {
-        if (_isInputValidAt(specId, index)) {
-          _availabilityStates[specId][index] = isTalentAvailableAt(specId, index);
+  void _createMaxedOutStates(int expansionId) {
+    for (List<bool> spec in TalentCalculatorConstants.initialMaxedOutState[expansionId]) {
+      List<bool> specState = [];
+
+      for (bool index in spec) {
+        specState.add(index);
+      }
+
+      _maxedOutStates.add(specState);
+    }
+  }
+
+  void _updateMaxedOutStates() {
+    for (int specId = 0; specId < _maxedOutStates.length; specId++) {
+      for (int index = 0; index < _maxedOutStates[specId].length; index++) {
+        if (isPositionEmptyAt(specId, index)) {
+          _maxedOutStates[specId][index] = false;
         } else {
-          _availabilityStates[specId][index] = false;
+          _maxedOutStates[specId][index] = isTalentMaxedOutAt(specId, index);
         }
       }
     }
