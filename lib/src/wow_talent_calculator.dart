@@ -174,7 +174,7 @@ class WowTalentCalculator {
       return false;
     }
 
-    if (pointsSumUpToCurrentRow - 1 < highestRow * 5 && pointsInNextRow > 0) {
+    if (pointsSumUpToCurrentRow - 1 < highestRow * 5 && pointsInNextRow > 0 && pointsInHighestRow > 0) {
       return false;
     }
 
