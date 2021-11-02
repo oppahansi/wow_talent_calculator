@@ -94,6 +94,10 @@ class WowTalentCalculator {
   /// Checks whether or not the talent at [index] is available
   /// Checks whether or not it is safe to remove a point at [index]
   bool canRemovePointAt(int specId, int index) {
+    if (getInvestedPointsAt(specId, index) == 0) {
+      return false;
+    }
+
     if (!_isInputValidAt(specId, index)) {
       return false;
     }
@@ -158,16 +162,23 @@ class WowTalentCalculator {
     }
 
     int pointsInThisTree = getSpentPoints(specId);
-    int maxRows = TalentCalculatorConstants.maxTalentTreeRows[_expansionId];
+    int maxRows = TalentCalculatorConstants.maxTalentTreeRows[_expansionId] - 1;
     int currentRow = index ~/ 4;
+    int nextRow = currentRow + 1 <= maxRows ? currentRow + 1 : maxRows;
     int highestRow = pointsInThisTree ~/ 5 >= maxRows ? maxRows - 1 : pointsInThisTree ~/ 5;
-    int pointsSumUpToHighestRow = _getPointsSumUpToRow(specId, highestRow);
+    int pointsSumUpToCurrentRow = _getPointsSumUpToRow(specId, currentRow);
+    int pointsInNextRow = _getRowSumFor(specId, nextRow);
+    int pointsInHighestRow = _getRowSumFor(specId, highestRow);
 
-    if (_getRowSumFor(specId, currentRow) - 1 < (currentRow * 5) + 5) {
+    if (pointsSumUpToCurrentRow - 1 < nextRow * 5 && pointsInNextRow > 0) {
       return false;
     }
 
-    if (pointsSumUpToHighestRow - 1 < highestRow * 5) {
+    if (pointsSumUpToCurrentRow - 1 < highestRow * 5 && pointsInNextRow > 0) {
+      return false;
+    }
+
+    if (pointsSumUpToCurrentRow - 1 < highestRow * 5 && pointsInHighestRow > 0) {
       return false;
     }
 
@@ -360,7 +371,7 @@ class WowTalentCalculator {
   int _getPointsSumUpToRow(int specId, int row) {
     int sum = 0;
 
-    for (int i = 0; i < row; i++) {
+    for (int i = 0; i <= row; i++) {
       sum += _getRowSumFor(specId, i);
     }
 
