@@ -1,5 +1,5 @@
-import './extensions.dart';
-import './talent_calculator_constants.dart';
+import 'extensions.dart';
+import 'talent_calculator_constants.dart';
 
 class WowTalentCalculator {
   int _expansionId = 0;
