@@ -263,13 +263,19 @@ class WowTalentCalculator {
 
   int get getCharClassId => _charClassId;
 
-  List<List<int>> get getTreeState => _treeStates;
+  List<List<int>> get getTreeStates => _treeStates;
 
   List<List<bool>> get getAvailabilityStates => _availabilityStates;
 
   List<List<bool>> get getMaxedOutStates => _maxedOutStates;
 
-  set setTreeState(List<List<int>> treeState) => _treeStates = treeState;
+  set setTreeStates(List<List<int>> treeStates) {
+    _treeStates = treeStates;
+
+    _updateAvailabilityStates();
+    _updateMaxedOutStates();
+    _updateSpentPoints();
+  }
 
   // * ----------------- PRIVATE METHODS -----------------
 
@@ -339,6 +345,19 @@ class WowTalentCalculator {
           _maxedOutStates[specId][index] = isTalentMaxedOutAt(specId, index);
         }
       }
+    }
+  }
+
+  void _updateSpentPoints() {
+    for (int specId = 0; specId < _spentPoints.length; specId++) {
+      int sum = 0;
+      for (int index = 0; index < _treeStates[specId].length; index++) {
+        int indexValue = _treeStates[specId][index];
+        if (indexValue >= 0) {
+          sum += indexValue;
+        }
+      }
+      _spentPoints[specId] = sum;
     }
   }
 
