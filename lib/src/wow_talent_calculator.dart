@@ -162,9 +162,9 @@ class WowTalentCalculator {
     }
 
     int pointsInThisTree = getSpentPoints(specId);
-    int maxRows = TalentCalculatorConstants.maxTalentTreeRows[_expansionId] - 1;
+    int maxRows = TalentCalculatorConstants.maxTalentTreeRows[_expansionId];
     int currentRow = index ~/ 4;
-    int nextRow = currentRow + 1 <= maxRows ? currentRow + 1 : maxRows;
+    int nextRow = currentRow + 1 <= maxRows ? currentRow + 1 : maxRows - 1;
     int highestRow = pointsInThisTree ~/ 5 >= maxRows ? maxRows - 1 : pointsInThisTree ~/ 5;
     int pointsSumUpToCurrentRow = _getPointsSumUpToRow(specId, currentRow);
     int pointsInNextRow = _getRowSumFor(specId, nextRow);
@@ -174,11 +174,7 @@ class WowTalentCalculator {
       return false;
     }
 
-    if (pointsSumUpToCurrentRow - 1 < highestRow * 5 && pointsInNextRow > 0 && pointsInHighestRow > 0) {
-      return false;
-    }
-
-    if (pointsSumUpToCurrentRow - 1 < highestRow * 5 && pointsInHighestRow > 0) {
+    if (pointsInThisTree - 1 <= highestRow * 5 && pointsInHighestRow > 0) {
       return false;
     }
 
@@ -398,6 +394,10 @@ class WowTalentCalculator {
   }
 
   int _getRowSumFor(int specId, int row) {
+    if (row * 4 >= _treeStates[specId].length) {
+      return 0;
+    }
+
     int rowSum = 0;
 
     for (int i = 0; i < 4; i++) {
