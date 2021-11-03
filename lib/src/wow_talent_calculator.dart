@@ -272,9 +272,9 @@ class WowTalentCalculator {
   set setTreeStates(List<List<int>> treeStates) {
     _treeStates = treeStates;
 
+    _updateSpentPoints();
     _updateAvailabilityStates();
     _updateMaxedOutStates();
-    _updateSpentPoints();
   }
 
   // * ----------------- PRIVATE METHODS -----------------
