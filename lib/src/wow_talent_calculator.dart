@@ -18,8 +18,8 @@ class WowTalentCalculator {
 
   /// Default constructor
   ///
-  /// When no parameters are provided, [expansionId] and [charclassId] are both set to 0
-  /// This means expansion will be Vanilla / Classic WoW and the character class will be Druid
+  /// When no parameters are provided, [expansionId] and [charclassId] are both set to 0.
+  /// This means expansion will be Vanilla / Classic WoW and the character class will be Druid.
   WowTalentCalculator({int expansionId = 0, int charClassId = 0}) {
     _expansionId = expansionId;
     _charClassId = charClassId;
@@ -41,7 +41,7 @@ class WowTalentCalculator {
 
   // * ----------------- PUBLIC METHODS -----------------
 
-  /// Invests a talent point in talent at [index]
+  /// Invests a talent point in talent in [specId] at [index].
   void investPointAt(int specId, int index) {
     if (!canInvestPointAt(specId, index)) {
       return;
@@ -52,7 +52,7 @@ class WowTalentCalculator {
     _updateAvailabilityStates();
   }
 
-  /// Removes a talent point from talent at [index]
+  /// Removes a talent point from talent in [specId] at [index].
   void removePointAt(int specId, int index) {
     if (!canRemovePointAt(specId, index)) {
       return;
@@ -63,11 +63,7 @@ class WowTalentCalculator {
     _updateAvailabilityStates();
   }
 
-  /// Checks whether or not it is possible to invest a talent point at [index]
-  ///
-  /// Checks whether or not all talent points are spent
-  /// Checks whether or not input [index] is valid
-  /// Checks whether or not the talent at [index] is available
+  /// Checks whether or not it is possible to invest a talent point in [specId] at [index].
   bool canInvestPointAt(int specId, int index) {
     if (areAllPointsSpent()) {
       return false;
@@ -88,11 +84,7 @@ class WowTalentCalculator {
     return true;
   }
 
-  /// Checks whether or not removing from talent at [index] is possible
-  ///
-  /// Checks wheter or not the inpunt [index] is valid
-  /// Checks whether or not the talent at [index] is available
-  /// Checks whether or not it is safe to remove a point at [index]
+  /// Checks whether or not removing from talent in [specId] at [index] is possible.
   bool canRemovePointAt(int specId, int index) {
     if (getInvestedPointsAt(specId, index) == 0) {
       return false;
@@ -113,10 +105,7 @@ class WowTalentCalculator {
     return true;
   }
 
-  /// Returns true when talent at [index] is available
-  ///
-  /// Checks for minimum required spent points in current tree
-  /// Checks for met dependencies
+  /// Returns true when talent in [specId] at [index] is available.
   bool isTalentAvailableAt(int specId, int index) {
     if (index ~/ 4 > 0 && _spentPoints[specId] < (index ~/ 4) * 5) {
       return false;
@@ -136,7 +125,7 @@ class WowTalentCalculator {
     return true;
   }
 
-  // Returns true when talent is maxed out
+  /// Returns true when talent in [specId] at [index] is maxed out.
   bool isTalentMaxedOutAt(int specId, int index) {
     if (_treeStates[specId][index] == _talentMaxPoints[specId][index]) {
       return true;
@@ -145,14 +134,10 @@ class WowTalentCalculator {
     return false;
   }
 
-  /// Checks whether or not there is a talent at the specified tree index
+  /// Checks whether or not there is a talent in [specId] at [index].
   bool isPositionEmptyAt(int specId, int index) => _talentTreeLayouts[specId][index] == 0;
 
-  /// Checks wheter or not it is safe to remove a talent point at [index]
-  ///
-  /// Checks if dependent talent has points
-  /// Checks if removing point would break dependency for the next tier
-  /// Checks if removing point would break highest tier
+  /// Checks wheter or not it is safe to remove a talent point in [specId] at [index].
   bool isSafeToRemovePointAt(int specId, int index) {
     if (_talentDependencies[specId].contains(index)) {
       int dependentTalent = _talentDependencies[specId].indexOf(index);
@@ -180,14 +165,12 @@ class WowTalentCalculator {
     return true;
   }
 
-  /// Returns true when [getSpentPoints] equals [_maxTalentPoints]
+  /// Returns true when [getSpentPoints] equals max talent points for the set [_expansionId].
   bool areAllPointsSpent() {
     return getSpentPoints() == TalentCalculatorConstants.maxTalentPoints[_expansionId];
   }
 
-  /// Resets a spec
-  ///
-  /// If no [specId] is provided, the current set [specId] will be reset
+  /// Resets spec with the provided [specId].
   void resetSpec(int specId) {
     for (int i = 0; i < _treeStates[specId].length; i++) {
       if (_treeStates[specId][i] < 0) {
@@ -201,14 +184,14 @@ class WowTalentCalculator {
     _updateAvailabilityStates();
   }
 
-  /// Resets all specs
+  /// Resets all specs.
   void resetAll() {
     for (int specId in TalentCalculatorConstants.expansionAndSpecIds) {
       resetSpec(specId);
     }
   }
 
-  /// Prints all specs in console
+  /// Prints all specs in console.
   void printAllSpecs() {
     String specState0 = _buildPrintableSpecState(0);
     String specState1 = _buildPrintableSpecState(1);
@@ -223,13 +206,15 @@ class WowTalentCalculator {
     }
   }
 
-  /// Prints spec
+  /// Prints spec with [specId].
   void printSpec(int specId) {
     print(_buildPrintableSpecState(specId));
   }
 
   // * ----------------- GETTER & SETTER -----------------
 
+  /// Returns spent points in the spsec with [specId].
+  /// If no [specId] is provided, sum for all specs is returned.
   int getSpentPoints([int specId = -1]) {
     if (specId == -1) {
       return _spentPoints[0] + _spentPoints[1] + _spentPoints[2];
@@ -238,6 +223,7 @@ class WowTalentCalculator {
     return _spentPoints[specId];
   }
 
+  /// Return the amount of invested points in [specId] at [index].
   int getInvestedPointsAt(int specId, int index) {
     if (!_isIndexValid(index)) {
       return -1;
@@ -246,24 +232,34 @@ class WowTalentCalculator {
     return _treeStates[specId][index];
   }
 
+  /// Returns true when talent in [specId] at [index] is available.
   bool getAvailabilityStateAt(int specId, int index) => _availabilityStates[specId][index];
 
+  /// Returns true when the talent in [specId] at [index] is maxed out.
   bool getMaxedOutStateAt(int specId, int index) => _maxedOutStates[specId][index];
 
+  /// Returns the amount of dependee talents for the specified talent in [specId] at [index].
   int getDependeesAmount(int specId, int index) => _talentDependencies[specId].count(index);
 
+  /// Returns the max talent points for the set [_expansionId].
   int get getMaxTalentPoints => TalentCalculatorConstants.maxTalentPoints[_expansionId];
 
+  /// Return the set [_expansionId].
   int get getExpansionId => _expansionId;
 
+  /// Returns the set [_charClassId].
   int get getCharClassId => _charClassId;
 
+  /// Returns the current tree states.
   List<List<int>> get getTreeStates => _treeStates;
 
+  /// Returns the current availability states.
   List<List<bool>> get getAvailabilityStates => _availabilityStates;
 
+  /// Returns the current maxed out states.
   List<List<bool>> get getMaxedOutStates => _maxedOutStates;
 
+  /// Sets the internal tree states to the provided [treeStates].
   set setTreeStates(List<List<int>> treeStates) {
     _treeStates = treeStates;
 
@@ -274,6 +270,7 @@ class WowTalentCalculator {
 
   // * ----------------- PRIVATE METHODS -----------------
 
+  /// Creates the tree states.
   void _createTreeState(int expansionId) {
     for (List<int> spec in TalentCalculatorConstants.initialTreeState[expansionId]) {
       List<int> specState = [];
@@ -285,6 +282,7 @@ class WowTalentCalculator {
     }
   }
 
+  /// Creates the availability states.
   void _createAvailabilityStates(int expansionId) {
     for (List<bool> spec in TalentCalculatorConstants.initialAvailabilityState[expansionId]) {
       List<bool> specState = [];
@@ -297,6 +295,7 @@ class WowTalentCalculator {
     }
   }
 
+  /// Initializes the tree states.
   void _initTreeState() {
     for (int i = 0; i < _treeStates.length; i++) {
       for (int j = 0; j < _treeStates[i].length; j++) {
@@ -307,6 +306,7 @@ class WowTalentCalculator {
     }
   }
 
+  /// Updates the availability states.
   void _updateAvailabilityStates() {
     for (int specId = 0; specId < _availabilityStates.length; specId++) {
       for (int index = 0; index < _availabilityStates[specId].length; index++) {
@@ -319,6 +319,7 @@ class WowTalentCalculator {
     }
   }
 
+  /// Creates the maxed out states.
   void _createMaxedOutStates(int expansionId) {
     for (List<bool> spec in TalentCalculatorConstants.initialMaxedOutState[expansionId]) {
       List<bool> specState = [];
@@ -331,6 +332,7 @@ class WowTalentCalculator {
     }
   }
 
+  /// Updates the maxed out states.
   void _updateMaxedOutStates() {
     for (int specId = 0; specId < _maxedOutStates.length; specId++) {
       for (int index = 0; index < _maxedOutStates[specId].length; index++) {
@@ -343,6 +345,7 @@ class WowTalentCalculator {
     }
   }
 
+  /// Updates the spent points.
   void _updateSpentPoints() {
     for (int specId = 0; specId < _spentPoints.length; specId++) {
       int sum = 0;
@@ -356,6 +359,7 @@ class WowTalentCalculator {
     }
   }
 
+  /// Returns a printable spec string.
   String _buildPrintableSpecState(int specId) {
     String specState = _specPrintTemplates[specId];
     for (int talentState in _treeStates[specId]) {
@@ -368,6 +372,7 @@ class WowTalentCalculator {
     return specState;
   }
 
+  /// Returns true when given the [specId] and [index] are valid.
   bool _isInputValidAt(int specId, int index) {
     if (!_isIndexValid(index)) {
       return false;
@@ -380,8 +385,10 @@ class WowTalentCalculator {
     return true;
   }
 
+  /// Returns true when the given [index] is valid.
   bool _isIndexValid(int index) => index >= 0 && index < _talentTreeLayouts[0].length;
 
+  /// Returns the points sum up to [row] in [specId].
   int _getPointsSumUpToRow(int specId, int row) {
     int sum = 0;
 
@@ -392,6 +399,7 @@ class WowTalentCalculator {
     return sum;
   }
 
+  /// Returns the points sum for the specified [row] in [specId].
   int _getRowSumFor(int specId, int row) {
     if (row * 4 >= _treeStates[specId].length) {
       return 0;

@@ -1,39 +1,122 @@
-<!-- 
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
+# WoW Talent Calculator  
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages). 
-
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages). 
--->
-
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+A dart package for handling wow talent calculator logic and state.
 
 ## Features
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
-
-## Getting started
-
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+- Supports Classic, The Burning Crusade and Wrath of the Lich King expansions.
+- Investing points
+- Removing points
+- Resetting a spec
+- Resetting all specs
+- Setting spec states (e.g.: Loading saved states)
+- Printing spec to console
+- Printing all specs to console
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder. 
+To use the wow talent calculator package, add `wow_talent_calculator` as a dependency in your pubspec.yaml file.
+
+## Example
 
 ```dart
-const like = 'sample';
+import 'package:wow_talent_calculator/wow_talent_calculator.dart';
+
+void main() {
+  var wtc = WowTalentCalculator(expansionId: 0, charClassId: 0);
+
+  for (int i = 0; i < 4; i++) {
+    wtc.investPointAt(0, 0);
+  }
+
+  wtc.investPointAt(0, 1);
+  wtc.investPointAt(0, 2);
+
+  for (int i = 0; i < 3; i++) {
+    wtc.investPointAt(0, 4);
+  }
+
+  wtc.investPointAt(0, 0);
+  wtc.investPointAt(0, 8);
+
+  wtc.printSpec(0);
+  wtc.printAllSpecs();
+}
+
 ```
 
-## Additional information
+Console output:
 
-TODO: Tell users more about the package: where to find more information, how to 
-contribute to the package, how to file issues, what response they can expect 
-from the package authors, and more.
+```bash
+______________
+| 5  1--1    |
+|            |
+| 3  0  0  0 |
+|    |       |
+| 1  |  0  0 |
+|    |       |
+|    0  0    |
+|            |
+|    0  0    |
+|    |       |
+|    0       |
+|            |
+|    0       |
+______________
+__________________________________________
+| 5  1--1    ||    0  0    ||    0  0    |
+|            ||            ||            |
+| 3  0  0  0 || 0  0  0    || 0  0  0    |
+|    |       ||            || |          |
+| 1  |  0  0 || 0  0  0--| || |  0  0  0 |
+|    |       ||       |  | || |     |    |
+|    0  0    || 0  0  0  0 || |  0  |  0 |
+|            ||    |       || |  |  |    |
+|    0  0    || 0  |  0    || 0  |  0  0 |
+|    |       ||    |       ||    |       |
+|    0       ||    0       ||    |  0    |
+|            ||            ||    |       |
+|    0       ||    0       ||    0       |
+__________________________________________
+
+```
+
+## Additional info
+
+### Expansions
+
+```dart
+enum Expansions {
+  vanilla,
+  tbc,
+  wotlk,
+}
+```
+
+### Character classes
+
+```dart
+enum CharClasses {
+  druid,
+  hunter,
+  mage,
+  paladin,
+  priest,
+  roque,
+  shaman,
+  warlock,
+  warrior,
+  dk,
+}
+```
+
+### Initializing
+
+By default the talent calculator initializes with the `expansionId: 0` and `charClassId: 0` when no parameters are provided.
+Id values correspond to their enum indecies.
+
+```dart
+var wtc = WowTalentCalculator(expansionId: 0, charClassId: 0);
+// is the same as
+var wtcSame = WowTalentCalculator();
+```
