@@ -153,12 +153,17 @@ class WowTalentCalculator {
     int highestRow = pointsInThisTree ~/ 5 >= maxRows ? maxRows - 1 : pointsInThisTree ~/ 5;
     int pointsSumUpToCurrentRow = _getPointsSumUpToRow(specId, currentRow);
     int pointsInNextRow = _getRowSumFor(specId, nextRow);
+    int pointsInHighestRow = _getRowSumFor(specId, highestRow);
 
-    if (pointsSumUpToCurrentRow - 1 < nextRow * 5 && pointsInNextRow > 0) {
+    if (currentRow == highestRow) {
+      return true;
+    }
+
+    if (pointsInThisTree - 1 <= highestRow * 5 && pointsInHighestRow > 0) {
       return false;
     }
 
-    if (pointsInThisTree - 1 <= highestRow * 5) {
+    if (pointsSumUpToCurrentRow - 1 < nextRow * 5 && pointsInNextRow > 0) {
       return false;
     }
 
