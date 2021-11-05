@@ -1,6 +1,6 @@
 name: wow_talent_calculator
 description: A package that handles the wow talent calculator logic.
-version: 1.0.0
+version: 1.0.1
 homepage: https://github.com/oppahansi/wow_talent_calculator
 
 environment:
