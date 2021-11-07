@@ -11,7 +11,9 @@ A dart package for handling wow talent calculator logic and state.
 - Resetting all specs
 - Setting spec states (e.g.: Loading saved states)
 - Printing spec to console
+- Talent sequence is kept saved in the background
 - Printing all specs to console
+- Printing talent sequence to console
 
 ## Usage
 

@@ -155,4 +155,57 @@ void main() {
       expect(wtc.isTalentAvailableAt(0, 13), false);
     });
   });
+
+  group('Build sequence', () {
+    setUp(() {
+      wtc = WowTalentCalculator(expansionId: 0, charClassId: 8);
+
+      for (int i = 0; i < 2; i++) {
+        wtc.investPointAt(0, 0);
+      }
+
+      for (int i = 0; i < 3; i++) {
+        wtc.investPointAt(0, 2);
+      }
+
+      wtc.investPointAt(0, 5);
+
+      for (int i = 0; i < 2; i++) {
+        wtc.investPointAt(1, 2);
+      }
+
+      for (int i = 0; i < 2; i++) {
+        wtc.investPointAt(2, 1);
+      }
+
+      // wtc.printBuildSequence();
+
+      // wtc.removePointAt(0, 5);
+
+      // wtc.printBuildSequence();
+
+      // wtc.investPointAt(0, 5);
+
+      // wtc.printBuildSequence();
+    });
+
+    test('should contain 10 elements after setup.', () {
+      expect(wtc.getBuildSequence.length == 10, true);
+    });
+
+    test('should contain 9 elements after removing one talent point.', () {
+      wtc.removePointAt(0, 5);
+      expect(wtc.getBuildSequence.length == 9, true);
+    });
+
+    test('should update all sequence points in the list when one sequence point is removed from the list.', () {
+      wtc.removePointAt(0, 5);
+
+      int sequencePointBeforeRemoving = wtc.getBuildSequence[6].sequencePoint;
+      wtc.removePointAt(0, 5);
+      int sequencePointAfterRemoving = wtc.getBuildSequence[5].sequencePoint;
+
+      expect(sequencePointBeforeRemoving - 1 == sequencePointAfterRemoving, true);
+    });
+  });
 }

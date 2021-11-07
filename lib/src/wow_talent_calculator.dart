@@ -1,3 +1,5 @@
+import 'package:wow_talent_calculator/src/sequence_point.dart';
+
 import 'extensions.dart';
 import 'talent_calculator_constants.dart';
 
@@ -11,6 +13,7 @@ class WowTalentCalculator {
   List<List<int>> _talentMaxPoints = [];
   List<List<int>> _talentDependencies = [];
   List<String> _specPrintTemplates = [];
+  List<SequencePoint> _buildSequence = List.empty(growable: true);
 
   final List<int> _spentPoints = [0, 0, 0];
   final List<List<bool>> _availabilityStates = [];
@@ -50,6 +53,7 @@ class WowTalentCalculator {
     _treeStates[specId][index]++;
     _spentPoints[specId]++;
     _updateAvailabilityStates();
+    _addSequencePoint(specId, index);
   }
 
   /// Removes a talent point from talent in [specId] at [index].
@@ -58,9 +62,11 @@ class WowTalentCalculator {
       return;
     }
 
+    _removeSequencePoint(specId, index);
     _treeStates[specId][index]--;
     _spentPoints[specId]--;
     _updateAvailabilityStates();
+    _updateSequencePointsOrder();
   }
 
   /// Checks whether or not it is possible to invest a talent point in [specId] at [index].
@@ -187,6 +193,7 @@ class WowTalentCalculator {
 
     _spentPoints[specId] = 0;
     _updateAvailabilityStates();
+    _removeSequencePoints(specId);
   }
 
   /// Resets all specs.
@@ -209,6 +216,15 @@ class WowTalentCalculator {
     for (int i = 0; i < lines0.length; i++) {
       print("${lines0[i]}${lines1[i]}${lines2[i]}");
     }
+  }
+
+  /// Prints the build sequence.
+  void printBuildSequence() {
+    String buildSequence = "Build sequence:\n";
+    for (var sequencePoint in _buildSequence) {
+      buildSequence += "No. ${sequencePoint.sequencePoint}: ${sequencePoint.talentIndex}:${sequencePoint.rank}\n";
+    }
+    print(buildSequence);
   }
 
   /// Prints spec with [specId].
@@ -264,6 +280,8 @@ class WowTalentCalculator {
   /// Returns the current maxed out states.
   List<List<bool>> get getMaxedOutStates => _maxedOutStates;
 
+  List<SequencePoint> get getBuildSequence => _buildSequence;
+
   /// Sets the internal tree states to the provided [treeStates].
   set setTreeStates(List<List<int>> treeStates) {
     _treeStates = treeStates;
@@ -272,6 +290,8 @@ class WowTalentCalculator {
     _updateAvailabilityStates();
     _updateMaxedOutStates();
   }
+
+  set setBuildSequence(List<SequencePoint> buildSequence) => _buildSequence = buildSequence;
 
   // * ----------------- PRIVATE METHODS -----------------
 
@@ -420,5 +440,32 @@ class WowTalentCalculator {
     }
 
     return rowSum;
+  }
+
+  void _addSequencePoint(int specId, int index) {
+    _buildSequence.add(SequencePoint(
+      expansionId: _expansionId,
+      charClassId: _charClassId,
+      specId: specId,
+      talentIndex: index,
+      sequencePoint: getSpentPoints(),
+      rank: getInvestedPointsAt(specId, index),
+    ));
+  }
+
+  void _removeSequencePoints(specId) {
+    _buildSequence.removeWhere((sequencePoint) => sequencePoint.specId == specId);
+  }
+
+  void _removeSequencePoint(int specId, int index) {
+    SequencePoint sequencePoint =
+        _buildSequence.firstWhere((sequencePoint) => sequencePoint.talentIndex == index && sequencePoint.rank == getInvestedPointsAt(specId, index));
+    _buildSequence.remove(sequencePoint);
+  }
+
+  void _updateSequencePointsOrder() {
+    for (int sequencePoint = 0; sequencePoint < _buildSequence.length; sequencePoint++) {
+      _buildSequence[sequencePoint].sequencePoint = sequencePoint + 1;
+    }
   }
 }
